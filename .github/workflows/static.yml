@@ -1,0 +1,1240 @@
+```html
+<!DOCTYPE html>
+<html lang="th" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CraftHub Universe — คลังแสงมอด Minecraft Mobile & PC</title>
+
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Kanit', 'Plus Jakarta Sans', 'sans-serif'],
+                    },
+                    colors: {
+                        brand: {
+                            50: '#f5f3ff',
+                            100: '#ede9fe',
+                            400: '#a78bfa',
+                            500: '#8b5cf6',
+                            600: '#7c3aed',
+                            700: '#6d28d9',
+                            950: '#0c071e',
+                        },
+                        cyber: {
+                            dark: '#05070e',
+                            card: 'rgba(15, 23, 42, 0.75)',
+                            border: 'rgba(139, 92, 246, 0.25)',
+                            cyan: '#06b6d4',
+                            pink: '#ec4899',
+                            emerald: '#10b981'
+                        }
+                    },
+                    animation: {
+                        'float': 'float 6s ease-in-out infinite',
+                        'glow-pulse': 'glowPulse 3s ease-in-out infinite alternate',
+                        'modal-in': 'modalIn 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards',
+                        'card-appear': 'cardAppear 0.4s ease-out forwards',
+                    },
+                    keyframes: {
+                        float: {
+                            '0%, 100%': { transform: 'translateY(0px)' },
+                            '50%': { transform: 'translateY(-10px)' },
+                        },
+                        glowPulse: {
+                            '0%': { boxShadow: '0 0 15px rgba(139, 92, 246, 0.3)' },
+                            '100%': { boxShadow: '0 0 35px rgba(236, 72, 153, 0.6)' }
+                        },
+                        modalIn: {
+                            '0%': { opacity: '0', transform: 'scale(0.92) translateY(20px)' },
+                            '100%': { opacity: '1', transform: 'scale(1) translateY(0)' }
+                        },
+                        cardAppear: {
+                            '0%': { opacity: '0', transform: 'translateY(15px)' },
+                            '100%': { opacity: '1', transform: 'translateY(0)' }
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+
+    <!-- FontAwesome & JSZip CDN -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Kanit:ital,wght@0,300;0,400;0,500;0,600;0,700;1,300&family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
+
+    <!-- Custom CSS Styles -->
+    <style>
+        body {
+            font-family: 'Kanit', 'Plus Jakarta Sans', sans-serif;
+            background-color: #05070e;
+            color: #f1f5f9;
+            overflow-x: hidden;
+        }
+
+        #particleCanvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        .glass-panel {
+            background: rgba(13, 18, 36, 0.85);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid rgba(139, 92, 246, 0.3);
+        }
+
+        .glass-card {
+            background: rgba(15, 23, 42, 0.75);
+            backdrop-filter: blur(14px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            transition: all 0.35s cubic-bezier(0.25, 1, 0.5, 1);
+        }
+
+        .glass-card:hover {
+            border-color: rgba(168, 85, 247, 0.6);
+            transform: translateY(-6px);
+            box-shadow: 0 15px 35px -10px rgba(139, 92, 246, 0.4);
+        }
+
+        .gradient-text {
+            background: linear-gradient(135deg, #a78bfa 0%, #ec4899 50%, #38bdf8 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: #080c14;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #4c1d95;
+            border-radius: 9999px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+            background: #8b5cf6;
+        }
+
+        .toast-animation {
+            animation: toastIn 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        }
+
+        @keyframes toastIn {
+            from { transform: translateY(100%) scale(0.85); opacity: 0; }
+            to { transform: translateY(0) scale(1); opacity: 1; }
+        }
+    </style>
+</head>
+
+<body class="min-h-screen flex flex-col justify-between selection:bg-brand-500 selection:text-white relative">
+
+    <!-- Interactive Particle Background Canvas -->
+    <canvas id="particleCanvas"></canvas>
+
+    <!-- Toast Notification Container -->
+    <div id="toastContainer" class="fixed bottom-6 right-6 z-50 flex flex-col gap-2.5 pointer-events-none"></div>
+
+    <!-- Header Navigation -->
+    <header class="sticky top-0 z-40 glass-panel border-b border-purple-900/40">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-4">
+            
+            <!-- Brand Logo -->
+            <div class="flex items-center gap-3 cursor-pointer select-none group" onclick="resetAllFilters()">
+                <div class="w-10 h-10 rounded-2xl bg-gradient-to-br from-purple-600 via-indigo-600 to-pink-600 flex items-center justify-center text-white text-xl shadow-lg shadow-purple-600/40 group-hover:rotate-12 transition-transform duration-300">
+                    <i class="fa-solid fa-cube"></i>
+                </div>
+                <div>
+                    <div class="flex items-center gap-2">
+                        <span class="text-xl font-extrabold tracking-tight gradient-text">CraftHub</span>
+                        <span class="text-[10px] bg-purple-950/90 text-purple-300 font-semibold px-2 py-0.5 rounded-full border border-purple-500/40">v4.0 UNIVERSE</span>
+                    </div>
+                    <p class="text-[10px] text-slate-400 font-light hidden sm:block">มอด Minecraft Mobile & PC ลงได้จริง 100%</p>
+                </div>
+            </div>
+
+            <!-- Global Search Box -->
+            <div class="hidden md:flex flex-1 max-w-lg relative">
+                <i class="fa-solid fa-magnifying-glass absolute left-4 top-1/2 -translate-y-1/2 text-purple-400"></i>
+                <input type="text" id="searchInput" oninput="handleSearchInput()" placeholder="ค้นหาสกิลมอด, .mcaddon, .mcpack, .zip, .jar..." 
+                    class="w-full pl-11 pr-10 py-2.5 bg-slate-950/90 border border-purple-500/30 rounded-2xl text-xs text-slate-100 placeholder-slate-500 focus:outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-500/30 transition-all">
+                <button id="clearSearchBtn" onclick="clearSearch()" class="hidden absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white text-xs">
+                    <i class="fa-solid fa-circle-xmark"></i>
+                </button>
+            </div>
+
+            <!-- Action Buttons -->
+            <div class="flex items-center gap-3">
+                <button onclick="openUploadModal()" class="relative group bg-gradient-to-r from-purple-600 via-indigo-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 text-white font-semibold text-xs px-4 py-2.5 rounded-2xl shadow-lg shadow-purple-900/50 flex items-center gap-2 transition-all duration-300 transform active:scale-95 animate-glow-pulse">
+                    <i class="fa-solid fa-cloud-arrow-up text-sm group-hover:-translate-y-0.5 transition-transform"></i>
+                    <span>อัปโหลดแชร์มอด</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- Mobile Search Input Bar -->
+        <div class="p-3 md:hidden border-t border-slate-800/80 bg-slate-950/95">
+            <div class="relative">
+                <i class="fa-solid fa-magnifying-glass absolute left-3.5 top-1/2 -translate-y-1/2 text-purple-400"></i>
+                <input type="text" id="mobileSearchInput" oninput="syncSearchMobile()" placeholder="ค้นหาชื่อมอด หรือแอดออน..." 
+                    class="w-full pl-10 pr-4 py-2 bg-slate-900 border border-purple-500/30 rounded-xl text-xs text-slate-200 placeholder-slate-500 focus:outline-none focus:border-purple-500">
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content Area -->
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 flex-grow w-full space-y-8 z-10 relative">
+
+        <!-- Hero Welcome Banner -->
+        <div class="relative rounded-3xl glass-panel p-6 sm:p-8 overflow-hidden shadow-2xl border border-purple-500/40">
+            <div class="absolute -right-16 -top-16 w-96 h-96 bg-purple-600/25 rounded-full blur-3xl pointer-events-none animate-pulse"></div>
+            <div class="absolute right-1/4 -bottom-24 w-80 h-80 bg-pink-600/20 rounded-full blur-3xl pointer-events-none"></div>
+
+            <div class="relative z-10 max-w-2xl space-y-4">
+                <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-purple-950/80 border border-purple-500/50 text-purple-300 text-xs font-medium backdrop-blur-md">
+                    <span class="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span>
+                    <span>ระบบรองรับการอัปโหลดไฟล์ตรงจากมือถือ & PC 100%</span>
+                </div>
+
+                <h1 class="text-2xl sm:text-4xl font-extrabold tracking-tight text-white leading-snug">
+                    ศูนย์รวมมอด <span class="gradient-text">Minecraft Mobile & PC</span> <br class="hidden sm:inline">
+                    รองรับไฟล์ .mcaddon, .mcpack, .zip, .jar
+                </h1>
+
+                <p class="text-slate-300 text-xs sm:text-sm leading-relaxed font-light">
+                    เลือกดาวน์โหลดมอดและแอดออนคุณภาพสูงไปติดตั้งเปิดเล่นได้ทันที หรือแชร์มอดของคุณเองด้วยการแนบรูปจากอัลบั้มและไฟล์มอดต้นฉบับตรงจากเครื่อง!
+                </p>
+
+                <!-- Featured Mod Quick Link -->
+                <div class="pt-2 flex flex-wrap items-center gap-3">
+                    <button onclick="openModDetails('mod-atomic')" class="bg-purple-950/90 hover:bg-purple-900 border border-purple-500/60 text-purple-200 text-xs font-semibold px-4 py-2.5 rounded-2xl flex items-center gap-2 transition group shadow-md">
+                        <i class="fa-solid fa-wand-magic-sparkles text-amber-400 group-hover:rotate-12 transition"></i>
+                        <span>แนะนำ: สกิลมอด I AM ATOMIC ( Bedrock Script API )</span>
+                        <i class="fa-solid fa-arrow-right text-[10px] text-purple-400 group-hover:translate-x-1 transition-transform"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Filter Controls Section -->
+        <section class="space-y-4">
+            <!-- DEVICE PLATFORM FILTER TABS -->
+            <div class="bg-slate-950/80 p-2.5 rounded-2xl border border-slate-800/90 flex flex-wrap items-center justify-between gap-3 shadow-lg">
+                <div class="flex items-center gap-2 overflow-x-auto custom-scrollbar w-full sm:w-auto pb-1 sm:pb-0" id="platformTabs">
+                    <!-- Platform tabs rendered via JS -->
+                </div>
+
+                <div class="text-[11px] text-slate-400 flex items-center gap-2 px-2">
+                    <i class="fa-solid fa-sliders text-purple-400"></i>
+                    <span>เลือกอุปกรณ์เพื่อกรองมอดที่ตรงกับเครื่องคุณ</span>
+                </div>
+            </div>
+
+            <!-- Categories & Sorting Row -->
+            <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border-b border-slate-800/80 pb-4">
+                
+                <!-- Category Tabs -->
+                <div class="flex items-center gap-2 overflow-x-auto custom-scrollbar w-full sm:w-auto pb-2 sm:pb-0" id="categoryTabs">
+                    <!-- Categories rendered via JS -->
+                </div>
+
+                <!-- Sort & Display Count -->
+                <div class="flex items-center gap-3 w-full sm:w-auto justify-between sm:justify-end text-xs text-slate-400">
+                    <span id="resultCount" class="font-medium text-slate-300">กำลังโหลดรายการมอด...</span>
+                    <div class="flex items-center gap-2">
+                        <span class="text-slate-500">เรียงตาม:</span>
+                        <select id="sortSelect" onchange="applyFilters()" class="bg-slate-900 border border-slate-700/80 text-slate-200 px-3 py-1.5 rounded-xl focus:outline-none focus:border-purple-500">
+                            <option value="downloads">ยอดดาวน์โหลดสูงสุด</option>
+                            <option value="rating">คะแนนรีวิวสูงสุด</option>
+                            <option value="likes">จำนวนคนถูกใจ</option>
+                            <option value="newest">อัปเดตล่าสุด</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tag Chips -->
+            <div class="flex items-center gap-2 overflow-x-auto custom-scrollbar py-1" id="tagChipsContainer">
+                <!-- Tags populated dynamically -->
+            </div>
+        </section>
+
+        <!-- Mods Grid Gallery -->
+        <section>
+            <div id="modsGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                <!-- Mod cards rendered dynamically -->
+            </div>
+
+            <!-- Empty Search State -->
+            <div id="emptyState" class="hidden text-center py-20 space-y-4 glass-card rounded-3xl border border-dashed border-slate-800">
+                <div class="w-20 h-20 mx-auto rounded-full bg-slate-900 border border-slate-800 flex items-center justify-center text-purple-400 text-3xl">
+                    <i class="fa-solid fa-compass-drafting"></i>
+                </div>
+                <h3 class="text-lg font-bold text-slate-200">ไม่พบมอดตามเงื่อนไขที่คุณเลือก</h3>
+                <p class="text-xs text-slate-400 max-w-sm mx-auto">ลองเปลี่ยนการกรองอุปกรณ์ หรือค้นหาด้วยคีย์เวิร์ดอื่น</p>
+                <button onclick="resetAllFilters()" class="bg-purple-900/60 hover:bg-purple-800 border border-purple-500/40 text-purple-200 text-xs font-medium px-5 py-2.5 rounded-2xl transition">
+                    ล้างตัวกรองทั้งหมด
+                </button>
+            </div>
+        </section>
+    </main>
+
+    <!-- MODAL 1: Mod Details Pop-up -->
+    <div id="detailsModal" class="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-md flex items-center justify-center p-3 sm:p-4 hidden">
+        <div class="glass-panel border border-purple-500/40 w-full max-w-3xl rounded-3xl shadow-2xl p-5 sm:p-8 max-h-[92vh] overflow-y-auto custom-scrollbar relative space-y-6 animate-modal-in">
+            
+            <button onclick="closeDetailsModal()" class="absolute top-4 right-4 text-slate-400 hover:text-white text-base w-9 h-9 rounded-full bg-slate-900/90 border border-slate-700 flex items-center justify-center transition z-20 hover:scale-110">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+
+            <div id="detailsContent">
+                <!-- Rendered dynamically -->
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL 2: Upload New Mod Modal (Supports ALL File Extensions & Direct Images) -->
+    <div id="uploadModal" class="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-md flex items-center justify-center p-3 sm:p-4 hidden">
+        <div class="glass-panel border border-purple-500/40 w-full max-w-2xl rounded-3xl shadow-2xl p-5 sm:p-8 max-h-[92vh] overflow-y-auto custom-scrollbar relative space-y-5 animate-modal-in">
+            
+            <button onclick="closeUploadModal()" class="absolute top-4 right-4 text-slate-400 hover:text-white text-base w-9 h-9 rounded-full bg-slate-900/90 border border-slate-700 flex items-center justify-center transition z-20 hover:scale-110">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+
+            <div class="space-y-1">
+                <h2 class="text-xl font-extrabold text-white flex items-center gap-2">
+                    <i class="fa-solid fa-cloud-arrow-up text-purple-400"></i> อัปโหลดแชร์มอดลง CraftHub
+                </h2>
+                <p class="text-xs text-slate-400">รองรับการอัปโหลดไฟล์มอดทุกชนิด (.mcaddon, .mcpack, .zip, .jar, .rar) และเลือกภาพจากอัลบั้มมือถือ/คอมพิวเตอร์ได้โดยตรง</p>
+            </div>
+
+            <!-- Upload Form -->
+            <form id="uploadForm" onsubmit="handleUploadSubmit(event)" class="space-y-4 text-xs">
+                
+                <!-- Title & Author -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-slate-300 font-semibold mb-1">ชื่อมอด / แอดออน *</label>
+                        <input type="text" id="upTitle" required placeholder="เช่น Shadow Katana Skill Addon" class="w-full bg-slate-950 border border-slate-700 rounded-xl p-2.5 text-slate-200 focus:outline-none focus:border-purple-500">
+                    </div>
+                    <div>
+                        <label class="block text-slate-300 font-semibold mb-1">ชื่อผู้สร้าง (Creator) *</label>
+                        <input type="text" id="upAuthor" required placeholder="เช่น Steve_Master" class="w-full bg-slate-950 border border-slate-700 rounded-xl p-2.5 text-slate-200 focus:outline-none focus:border-purple-500">
+                    </div>
+                </div>
+
+                <!-- Platform Device Selection -->
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                    <div>
+                        <label class="block text-slate-300 font-semibold mb-1">อุปกรณ์ที่รองรับ *</label>
+                        <select id="upPlatform" class="w-full bg-slate-950 border border-slate-700 rounded-xl p-2.5 text-slate-200 focus:outline-none focus:border-purple-500">
+                            <option value="Mobile">มือถือ (Mobile / PE)</option>
+                            <option value="PC">คอมพิวเตอร์ (PC / Java)</option>
+                            <option value="Both">รองรับทั้ง Mobile & PC</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-slate-300 font-semibold mb-1">หมวดหมู่ *</label>
+                        <select id="upCategory" class="w-full bg-slate-950 border border-slate-700 rounded-xl p-2.5 text-slate-200 focus:outline-none focus:border-purple-500">
+                            <option value="Add-ons">Add-ons (สคริปต์/สกิล)</option>
+                            <option value="Texture Packs">Texture Packs</option>
+                            <option value="Maps">Maps (แมพ/โลก)</option>
+                            <option value="Shaders">Shaders & VFX</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-slate-300 font-semibold mb-1">เวอร์ชันเกม</label>
+                        <input type="text" id="upVersion" value="1.20.80+" class="w-full bg-slate-950 border border-slate-700 rounded-xl p-2.5 text-slate-200 focus:outline-none focus:border-purple-500">
+                    </div>
+                </div>
+
+                <!-- File & Image Upload Pickers -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    
+                    <!-- Direct Image Picker -->
+                    <div class="bg-slate-950/90 p-3.5 rounded-2xl border border-slate-800 space-y-2">
+                        <label class="block text-slate-300 font-semibold flex items-center justify-between">
+                            <span><i class="fa-solid fa-image text-purple-400 mr-1.5"></i> ภาพปกมอด</span>
+                            <span class="text-[10px] text-slate-500">(เลือกจากคลังภาพ)</span>
+                        </label>
+                        <input type="file" id="upImageFile" accept="image/*" onchange="handleImageFileSelect(event)" class="hidden">
+                        <div onclick="document.getElementById('upImageFile').click()" class="border-2 border-dashed border-slate-700 hover:border-purple-500 rounded-xl p-3 text-center cursor-pointer transition bg-slate-900/60 flex flex-col items-center justify-center min-h-[110px]">
+                            <div id="imagePreviewBox" class="flex flex-col items-center space-y-1">
+                                <i class="fa-solid fa-camera text-2xl text-purple-400 mb-1"></i>
+                                <span class="text-slate-300 font-medium">กดเลือกรูปจากเครื่อง</span>
+                                <span class="text-[10px] text-slate-500">.png, .jpg, .webp</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Direct Mod File Attachment Picker -->
+                    <div class="bg-slate-950/90 p-3.5 rounded-2xl border border-slate-800 space-y-2">
+                        <label class="block text-slate-300 font-semibold flex items-center justify-between">
+                            <span><i class="fa-solid fa-file-zipper text-cyan-400 mr-1.5"></i> ไฟล์มอดต้นฉบับ *</span>
+                            <span class="text-[10px] text-slate-500">(ไม่จำกัดนามสกุล)</span>
+                        </label>
+                        
+                        <!-- Explicit file acceptance covering all Minecraft mod types -->
+                        <input type="file" id="upModFile" accept=".mcaddon,.mcpack,.zip,.jar,.rar,.7z,application/octet-stream,application/zip" onchange="handleModFileSelect(event)" class="hidden">
+                        
+                        <div onclick="document.getElementById('upModFile').click()" class="border-2 border-dashed border-slate-700 hover:border-cyan-500 rounded-xl p-3 text-center cursor-pointer transition bg-slate-900/60 flex flex-col items-center justify-center min-h-[110px]">
+                            <div id="modFileBox" class="flex flex-col items-center space-y-1">
+                                <i class="fa-solid fa-folder-open text-2xl text-cyan-400 mb-1"></i>
+                                <span id="modFileNameText" class="text-slate-300 font-medium">กดเลือกไฟล์มอด (.mcaddon, .mcpack...)</span>
+                                <span class="text-[10px] text-cyan-400 font-mono">.mcaddon, .mcpack, .zip, .jar, .rar</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Description -->
+                <div>
+                    <label class="block text-slate-300 font-semibold mb-1">คำอธิบายมอด *</label>
+                    <textarea id="upDesc" rows="3" required placeholder="อธิบายจุดเด่น สกิล หรือวิธีใช้งานมอดของคุณ..." class="w-full bg-slate-950 border border-slate-700 rounded-xl p-2.5 text-slate-200 focus:outline-none focus:border-purple-500 leading-relaxed"></textarea>
+                </div>
+
+                <!-- Tags -->
+                <div>
+                    <label class="block text-slate-300 font-semibold mb-1">แท็ก (คั่นด้วยเครื่องหมายจุลภาค , )</label>
+                    <input type="text" id="upTags" placeholder="Mobile, Script API, PvP, Magic" class="w-full bg-slate-950 border border-slate-700 rounded-xl p-2.5 text-slate-200 focus:outline-none focus:border-purple-500">
+                </div>
+
+                <!-- Submit Buttons -->
+                <div class="pt-2 flex items-center justify-end gap-3">
+                    <button type="button" onclick="closeUploadModal()" class="bg-slate-800 text-slate-300 px-5 py-2.5 rounded-xl font-medium hover:bg-slate-700 transition">ยกเลิก</button>
+                    <button type="submit" class="bg-gradient-to-r from-purple-600 via-indigo-600 to-pink-600 text-white font-bold px-6 py-2.5 rounded-xl hover:from-purple-500 hover:to-pink-500 shadow-lg shadow-purple-600/30 transition transform active:scale-95">
+                        เผยแพร่มอดลง CraftHub
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="border-t border-slate-800/80 bg-slate-950/90 backdrop-blur-md py-8 text-center text-xs text-slate-400 mt-12 z-10 relative">
+        <div class="max-w-7xl mx-auto px-4 space-y-3">
+            <div class="flex justify-center items-center gap-2 text-slate-300 font-bold">
+                <i class="fa-solid fa-cube text-purple-400"></i>
+                <span>CraftHub Universe Thailand</span>
+            </div>
+            <p class="max-w-md mx-auto text-slate-500 font-light">
+                ชุมชนแจกมอดและแอดออน Minecraft สำหรับผู้เล่น Mobile PE & PC สามารถอัปโหลดและดาวน์โหลดไฟล์ตรงไปเล่นได้ทันที
+            </p>
+            <p class="text-[11px] text-slate-600">Not an official Minecraft product. Not approved by or associated with Mojang or Microsoft.</p>
+        </div>
+    </footer>
+
+    <!-- JavaScript Application Logic -->
+    <script>
+        
+        // PRE-LOADED MOD DATA
+        const INITIAL_MODS = [
+            {
+                id: 'mod-atomic',
+                title: 'I AM ATOMIC ( Bedrock Script API )',
+                author: 'Cid_Kagenou',
+                category: 'Add-ons',
+                platform: 'Mobile',
+                rating: 5.0,
+                downloads: 38400,
+                likes: 9210,
+                version: '1.20.80+',
+                tags: ['Script API', 'Magic', 'Anime', 'Combat', 'Mobile'],
+                image: 'https://images.unsplash.com/photo-1534447677768-be436bb09401?w=800&q=80',
+                fileType: 'mcaddon',
+                uploadedFileData: null,
+                isLiked: false,
+                description: 'แอดออนสกิลไม้ตาย "I AM ATOMIC" เมื่อถือ Diamond Sword แล้วกดใช้งาน จะสร้างออร่าสีม่วงและระเบิดทำลายล้างรอบตัว 25 บล็อก พร้อมเอฟเฟกต์สมจริง!',
+                installGuide: `1. กดปุ่ม 'ดาวน์โหลดมอด' จะได้ไฟล์ I_AM_ATOMIC.mcaddon
+2. บนมือถือ (Android/iOS) กดเปิดไฟล์ด้วยแอป Minecraft
+3. บน PC ดับเบิลคลิกเปิดไฟล์เพื่อนำเข้าเกม
+4. เปิด Behavior Packs ในตั้งค่าโลก แล้วเปิดตัวเลือก 'Beta APIs' ในส่วน Experiments`,
+                changelog: 'v1.0.0: รองรับ Minecraft Bedrock Mobile & PC v1.20.80+',
+                comments: [
+                    { user: 'PE_GamerTH', text: 'มอดนี้เล่นบนมือถือลื่นสุดๆ ครับ สกิลอลังการมาก!', date: '30 นาทีที่แล้ว' },
+                    { user: 'KuroChan_39', text: 'โหลดไฟล์ .mcaddon ไปกดเปิดเข้าเกมได้ทันที ไม่ติด Corrupt ครับ', date: '2 ชั่วโมงที่แล้ว' }
+                ]
+            },
+            {
+                id: 'mod-shadow-blades',
+                title: 'Katana Master & VFX Weapons PE',
+                author: 'BladeCrafter_TH',
+                category: 'Add-ons',
+                platform: 'Mobile',
+                rating: 4.8,
+                downloads: 21000,
+                likes: 4900,
+                version: '1.20.50+',
+                tags: ['Weapons', 'Combat', 'Mobile'],
+                image: 'https://images.unsplash.com/photo-1578632767115-351597cf2477?w=800&q=80',
+                fileType: 'mcaddon',
+                uploadedFileData: null,
+                isLiked: false,
+                description: 'เพิ่มดาบคาตานะ 5 เล่มสำหรับสายจอมยุทธ์มือถือ พร้อมท่าพุ่งฟันและเอฟเฟกต์ละอองฟันดาบคมกริบ',
+                installGuide: 'ดาวน์โหลดไฟล์ .mcaddon เปิดเข้าเกม และเปิดตัวเลือก Holiday Creator Features',
+                changelog: 'v1.2.0: ปรับปรุงความสมดุลของดาเมจฟันดาบ',
+                comments: []
+            },
+            {
+                id: 'mod-java-sodium',
+                title: 'Sodium & Iris Shaders Modpack (Java PC)',
+                author: 'PC_Gamer_Studio',
+                category: 'Shaders',
+                platform: 'PC',
+                rating: 4.9,
+                downloads: 54000,
+                likes: 13100,
+                version: '1.20.4 Java',
+                tags: ['PC', 'Shaders', 'Graphics', 'Java'],
+                image: 'https://images.unsplash.com/photo-1518709268805-4e9042af9f23?w=800&q=80',
+                fileType: 'jar',
+                uploadedFileData: null,
+                isLiked: false,
+                description: 'มอดเร่งเฟรมเรตและเพิ่มความสมจริงของแสงเงาสำหรับผู้เล่น Minecraft Java Edition บน PC ดัน FPS พุ่งทะลุ 200+',
+                installGuide: 'นำไฟล์ .jar ไปวางในโฟลเดอร์ .minecraft/mods แล้วเปิดเกมผ่าน Fabric Loader',
+                changelog: 'v3.0: อัปเดตรองรับ Java 1.20.4',
+                comments: []
+            }
+        ];
+
+        // STATE VARIABLES
+        let modsList = JSON.parse(localStorage.getItem('crafthub_mods_v4')) || INITIAL_MODS;
+        let activePlatform = 'All';
+        let activeCategory = 'All';
+        let activeTag = 'All';
+        let searchQuery = '';
+        let currentOpenModId = null;
+
+        // Temporary Form Staging Data
+        let stagedImageDataUrl = null;
+        let stagedModFile = null;
+
+        const PLATFORMS = [
+            { id: 'All', label: 'ทั้งหมด (All)', icon: 'fa-globe' },
+            { id: 'Mobile', label: 'มือถือ (Mobile / PE)', icon: 'fa-mobile-screen-button' },
+            { id: 'PC', label: 'คอมพิวเตอร์ (PC / Java)', icon: 'fa-laptop' }
+        ];
+
+        const CATEGORIES = ['All', 'Add-ons', 'Texture Packs', 'Maps', 'Shaders'];
+        const ALL_TAGS = ['All', 'Script API', 'Weapons', 'Magic', 'Shaders', 'Survival', 'Mobile', 'PC'];
+
+        function initParticles() {
+            const canvas = document.getElementById('particleCanvas');
+            const ctx = canvas.getContext('2d');
+            let particles = [];
+
+            function resize() {
+                canvas.width = window.innerWidth;
+                canvas.height = window.innerHeight;
+            }
+            window.addEventListener('resize', resize);
+            resize();
+
+            for (let i = 0; i < 45; i++) {
+                particles.push({
+                    x: Math.random() * canvas.width,
+                    y: Math.random() * canvas.height,
+                    radius: Math.random() * 2 + 0.5,
+                    color: Math.random() > 0.5 ? '#8b5cf6' : '#ec4899',
+                    vx: (Math.random() - 0.5) * 0.4,
+                    vy: (Math.random() - 0.5) * 0.4,
+                    alpha: Math.random() * 0.5 + 0.2
+                });
+            }
+
+            function animateParticles() {
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                particles.forEach(p => {
+                    p.x += p.vx;
+                    p.y += p.vy;
+
+                    if (p.x < 0) p.x = canvas.width;
+                    if (p.x > canvas.width) p.x = 0;
+                    if (p.y < 0) p.y = canvas.height;
+                    if (p.y > canvas.height) p.y = 0;
+
+                    ctx.beginPath();
+                    ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
+                    ctx.fillStyle = p.color;
+                    ctx.globalAlpha = p.alpha;
+                    ctx.fill();
+                });
+                requestAnimationFrame(animateParticles);
+            }
+            animateParticles();
+        }
+
+        function initApp() {
+            initParticles();
+            renderPlatformTabs();
+            renderCategoryTabs();
+            renderTagChips();
+            applyFilters();
+        }
+
+        function renderPlatformTabs() {
+            const container = document.getElementById('platformTabs');
+            container.innerHTML = PLATFORMS.map(p => `
+                <button onclick="selectPlatform('${p.id}')" 
+                    class="px-4 py-2 rounded-xl text-xs font-semibold shrink-0 transition-all flex items-center gap-2 ${activePlatform === p.id ? 'bg-gradient-to-r from-purple-600 via-indigo-600 to-pink-600 text-white shadow-lg shadow-purple-600/30' : 'bg-slate-900/90 text-slate-400 border border-slate-800 hover:border-slate-700 hover:text-slate-200'}">
+                    <i class="fa-solid ${p.icon}"></i>
+                    <span>${p.label}</span>
+                </button>
+            `).join('');
+        }
+
+        function renderCategoryTabs() {
+            const container = document.getElementById('categoryTabs');
+            container.innerHTML = CATEGORIES.map(cat => `
+                <button onclick="selectCategory('${cat}')" 
+                    class="px-4 py-2 rounded-xl text-xs font-semibold shrink-0 transition-all ${activeCategory === cat ? 'bg-purple-900/90 text-purple-200 border border-purple-500/80 shadow-md' : 'bg-slate-900/80 text-slate-400 border border-slate-800 hover:border-slate-700 hover:text-slate-200'}">
+                    ${cat === 'All' ? 'หมวดหมู่ทั้งหมด' : cat}
+                </button>
+            `).join('');
+        }
+
+        function renderTagChips() {
+            const container = document.getElementById('tagChipsContainer');
+            container.innerHTML = ALL_TAGS.map(tag => `
+                <button onclick="selectTag('${tag}')" 
+                    class="px-3 py-1 rounded-lg text-[11px] font-medium shrink-0 transition-all ${activeTag === tag ? 'bg-purple-950 border border-purple-400 text-purple-200' : 'bg-slate-950/60 border border-slate-800 text-slate-400 hover:text-slate-300'}">
+                    #${tag}
+                </button>
+            `).join('');
+        }
+
+        function applyFilters() {
+            const sortVal = document.getElementById('sortSelect').value;
+
+            let filtered = modsList.filter(mod => {
+                const matchPlatform = activePlatform === 'All' || mod.platform === activePlatform || mod.platform === 'Both';
+                const matchCat = activeCategory === 'All' || mod.category === activeCategory;
+                const matchTag = activeTag === 'All' || mod.tags.includes(activeTag);
+
+                const q = searchQuery.toLowerCase().trim();
+                const matchSearch = !q || 
+                    mod.title.toLowerCase().includes(q) || 
+                    mod.author.toLowerCase().includes(q) ||
+                    mod.description.toLowerCase().includes(q) ||
+                    mod.tags.some(t => t.toLowerCase().includes(q));
+
+                return matchPlatform && matchCat && matchTag && matchSearch;
+            });
+
+            if (sortVal === 'downloads') filtered.sort((a, b) => b.downloads - a.downloads);
+            else if (sortVal === 'rating') filtered.sort((a, b) => b.rating - a.rating);
+            else if (sortVal === 'likes') filtered.sort((a, b) => b.likes - a.likes);
+            else if (sortVal === 'newest') filtered.sort((a, b) => b.id.localeCompare(a.id));
+
+            renderGrid(filtered);
+            document.getElementById('resultCount').innerText = `พบทั้งหมด ${filtered.length} รายการ`;
+        }
+
+        function renderGrid(mods) {
+            const grid = document.getElementById('modsGrid');
+            const empty = document.getElementById('emptyState');
+
+            if (mods.length === 0) {
+                grid.innerHTML = '';
+                empty.classList.remove('hidden');
+                return;
+            }
+
+            empty.classList.add('hidden');
+            grid.innerHTML = mods.map(mod => {
+                let platformBadge = `<span class="bg-indigo-950/90 text-indigo-300 border border-indigo-500/50 text-[10px] font-bold px-2 py-0.5 rounded-md"><i class="fa-solid fa-mobile-screen-button mr-1"></i>Mobile</span>`;
+                if (mod.platform === 'PC') {
+                    platformBadge = `<span class="bg-cyan-950/90 text-cyan-300 border border-cyan-500/50 text-[10px] font-bold px-2 py-0.5 rounded-md"><i class="fa-solid fa-laptop mr-1"></i>PC</span>`;
+                } else if (mod.platform === 'Both') {
+                    platformBadge = `<span class="bg-emerald-950/90 text-emerald-300 border border-emerald-500/50 text-[10px] font-bold px-2 py-0.5 rounded-md"><i class="fa-solid fa-globe mr-1"></i>Mobile & PC</span>`;
+                }
+
+                return `
+                <div class="glass-card rounded-2xl overflow-hidden shadow-xl flex flex-col justify-between group animate-card-appear">
+                    <div>
+                        <!-- Thumbnail Header -->
+                        <div class="relative h-44 overflow-hidden bg-slate-950 cursor-pointer" onclick="openModDetails('${mod.id}')">
+                            <img src="${mod.image}" alt="${mod.title}" class="w-full h-full object-cover group-hover:scale-105 transition duration-500">
+                            <div class="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/20 to-transparent"></div>
+                            
+                            <span class="absolute top-3 left-3 bg-slate-900/90 backdrop-blur-md border border-slate-700/80 text-purple-300 text-[10px] font-bold px-2.5 py-0.5 rounded-lg">
+                                ${mod.category}
+                            </span>
+
+                            <div class="absolute top-3 right-3 flex items-center gap-1">
+                                ${platformBadge}
+                                <span class="bg-purple-950/90 border border-purple-500/50 text-purple-200 text-[10px] font-mono font-bold px-2 py-0.5 rounded-md">
+                                    .${mod.fileType}
+                                </span>
+                            </div>
+                        </div>
+
+                        <!-- Card Body -->
+                        <div class="p-4 space-y-3">
+                            <div class="flex items-center justify-between text-xs text-slate-400">
+                                <span class="truncate max-w-[130px]"><i class="fa-solid fa-user-pen text-purple-400 mr-1.5"></i>${mod.author}</span>
+                                <span class="text-amber-400 font-semibold flex items-center gap-1"><i class="fa-solid fa-star text-xs"></i>${mod.rating}</span>
+                            </div>
+
+                            <h3 onclick="openModDetails('${mod.id}')" class="font-bold text-slate-100 text-sm line-clamp-1 group-hover:text-purple-400 transition cursor-pointer">
+                                ${mod.title}
+                            </h3>
+
+                            <p class="text-xs text-slate-400 line-clamp-2 leading-relaxed font-light">
+                                ${mod.description}
+                            </p>
+
+                            <div class="flex flex-wrap gap-1 pt-1">
+                                ${mod.tags.slice(0, 3).map(t => `<span class="bg-slate-950/80 text-slate-400 text-[10px] px-2 py-0.5 rounded border border-slate-800">#${t}</span>`).join('')}
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Footer Action -->
+                    <div class="p-4 pt-0 border-t border-slate-800/60 mt-3 flex items-center justify-between gap-2">
+                        <div class="flex items-center gap-3 text-xs text-slate-400">
+                            <span><i class="fa-solid fa-download text-slate-500 mr-1"></i>${formatCompactNum(mod.downloads)}</span>
+                            <button onclick="toggleCardLike('${mod.id}', event)" class="hover:text-rose-400 transition ${mod.isLiked ? 'text-rose-500 font-bold' : ''}">
+                                <i class="fa-solid fa-heart mr-1"></i>${mod.likes}
+                            </button>
+                        </div>
+
+                        <button onclick="downloadModFile('${mod.id}', event)" class="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 text-white font-semibold px-3 py-1.5 rounded-xl text-xs transition flex items-center gap-1.5 shadow-md shadow-purple-900/30 active:scale-95">
+                            <i class="fa-solid fa-file-arrow-down"></i>
+                            <span>โหลดมอด</span>
+                        </button>
+                    </div>
+                </div>
+            `;
+            }).join('');
+        }
+
+        function openModDetails(modId) {
+            currentOpenModId = modId;
+            const mod = modsList.find(m => m.id === modId);
+            if (!mod) return;
+
+            const container = document.getElementById('detailsContent');
+            container.innerHTML = `
+                <div class="space-y-6">
+                    <div class="relative h-56 sm:h-72 rounded-2xl overflow-hidden border border-slate-800 shadow-2xl">
+                        <img src="${mod.image}" alt="${mod.title}" class="w-full h-full object-cover">
+                        <div class="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/40 to-transparent"></div>
+                        <div class="absolute bottom-4 left-4 right-4 flex flex-wrap items-end justify-between gap-3">
+                            <div>
+                                <div class="flex items-center gap-2 mb-2">
+                                    <span class="bg-purple-600 text-white text-xs font-bold px-2.5 py-1 rounded-lg">${mod.category}</span>
+                                    <span class="bg-slate-900/90 backdrop-blur-sm text-purple-300 text-xs px-2.5 py-1 rounded-lg border border-purple-500/40">${mod.platform === 'Mobile' ? 'มือถือ (Mobile PE)' : mod.platform === 'PC' ? 'คอมพิวเตอร์ (PC Java)' : 'มือถือ & PC'}</span>
+                                </div>
+                                <h1 class="text-2xl sm:text-3xl font-extrabold text-white tracking-tight">${mod.title}</h1>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="flex flex-wrap items-center justify-between gap-4 bg-slate-950/90 p-4 rounded-2xl border border-slate-800 text-xs">
+                        <div class="flex items-center gap-4">
+                            <div>
+                                <span class="text-slate-500 block text-[10px]">ผู้สร้างมอด</span>
+                                <span class="font-bold text-slate-200">${mod.author}</span>
+                            </div>
+                            <div class="border-l border-slate-800 pl-4">
+                                <span class="text-slate-500 block text-[10px]">ดาวน์โหลดแล้ว</span>
+                                <span class="font-bold text-slate-200" id="detailDownloadsCount">${formatCompactNum(mod.downloads)} ครั้ง</span>
+                            </div>
+                            <div class="border-l border-slate-800 pl-4">
+                                <span class="text-slate-500 block text-[10px]">รองรับเวอร์ชัน</span>
+                                <span class="font-bold text-purple-400">${mod.version}</span>
+                            </div>
+                        </div>
+
+                        <div class="flex items-center gap-2">
+                            <button onclick="toggleModalLike('${mod.id}')" id="modalLikeBtn" class="bg-slate-900 hover:bg-slate-800 border border-slate-700 text-rose-400 px-3 py-2 rounded-xl flex items-center gap-1.5 transition">
+                                <i class="fa-solid fa-heart ${mod.isLiked ? 'text-rose-500' : ''}"></i>
+                                <span id="detailLikesCount">${mod.likes}</span>
+                            </button>
+                            <button onclick="downloadModFile('${mod.id}')" class="bg-gradient-to-r from-purple-600 via-indigo-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 text-white font-bold px-5 py-2 rounded-xl flex items-center gap-2 shadow-lg shadow-purple-600/30 transition active:scale-95">
+                                <i class="fa-solid fa-download"></i>
+                                <span>ดาวน์โหลด .${mod.fileType}</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="space-y-4">
+                        <div class="flex border-b border-slate-800 text-xs font-semibold text-slate-400 gap-4">
+                            <button onclick="switchTab('descTab')" id="btn-descTab" class="pb-2 border-b-2 border-purple-500 text-purple-300">รายละเอียดฟีเจอร์</button>
+                            <button onclick="switchTab('guideTab')" id="btn-guideTab" class="pb-2 border-b-2 border-transparent hover:text-slate-200">ขั้นตอนการติดตั้ง</button>
+                            <button onclick="switchTab('changelogTab')" id="btn-changelogTab" class="pb-2 border-b-2 border-transparent hover:text-slate-200">บันทึกการอัปเดต</button>
+                        </div>
+
+                        <div id="tab-descTab" class="tab-content text-xs sm:text-sm text-slate-300 space-y-3 leading-relaxed">
+                            <p class="bg-slate-950/60 p-4 rounded-2xl border border-slate-800/80">${mod.description}</p>
+                            <div class="flex flex-wrap gap-1.5">
+                                ${mod.tags.map(t => `<span class="bg-purple-950/40 text-purple-300 border border-purple-500/30 px-2.5 py-1 rounded-lg text-xs">#${t}</span>`).join('')}
+                            </div>
+                        </div>
+
+                        <div id="tab-guideTab" class="tab-content hidden text-xs sm:text-sm text-slate-300 space-y-3 leading-relaxed">
+                            <div class="bg-slate-950/90 p-4 rounded-2xl border border-slate-800 font-sans whitespace-pre-wrap text-slate-200 leading-relaxed">${mod.installGuide || 'กดเปิดไฟล์เพื่อนำเข้าสู่ Minecraft โดยตรง'}</div>
+                        </div>
+
+                        <div id="tab-changelogTab" class="tab-content hidden text-xs sm:text-sm text-slate-300 space-y-3">
+                            <div class="bg-slate-950/90 p-4 rounded-2xl border border-slate-800 text-slate-300">${mod.changelog || 'v1.0.0: เปิดตัวไฟล์มอดอย่างเป็นทางการ'}</div>
+                        </div>
+                    </div>
+
+                    <div class="pt-4 border-t border-slate-800 space-y-4">
+                        <h3 class="font-bold text-slate-200 text-sm flex items-center gap-2">
+                            <i class="fa-solid fa-comments text-purple-400"></i> รีวิวความคิดเห็น (${mod.comments ? mod.comments.length : 0})
+                        </h3>
+
+                        <div class="flex gap-2">
+                            <input type="text" id="modalCommentInput" placeholder="เขียนรีวิวหรือแสดงความคิดเห็น..." class="flex-1 bg-slate-950 border border-slate-700 rounded-xl p-2.5 text-xs text-slate-200 focus:outline-none focus:border-purple-500">
+                            <button onclick="submitComment('${mod.id}')" class="bg-purple-600 hover:bg-purple-500 text-white font-semibold px-4 rounded-xl text-xs transition">ส่ง</button>
+                        </div>
+
+                        <div class="space-y-2 text-xs">
+                            ${(mod.comments && mod.comments.length > 0) ? mod.comments.map(c => `
+                                <div class="bg-slate-950/60 p-3 rounded-xl border border-slate-800/80 space-y-1">
+                                    <div class="flex justify-between items-center text-[11px]">
+                                        <span class="font-bold text-purple-300"><i class="fa-solid fa-circle-user mr-1"></i>${c.user}</span>
+                                        <span class="text-slate-500">${c.date}</span>
+                                    </div>
+                                    <p class="text-slate-300">${c.text}</p>
+                                </div>
+                            `).join('') : '<p class="text-slate-500 text-xs italic">ยังไม่มีรีวิว มาร่วมแสดงความคิดเห็นเป็นคนแรก!</p>'}
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            document.getElementById('detailsModal').classList.remove('hidden');
+        }
+
+        function closeDetailsModal() {
+            document.getElementById('detailsModal').classList.add('hidden');
+            currentOpenModId = null;
+        }
+
+        function switchTab(tabId) {
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
+            document.querySelectorAll('[id^="btn-"]').forEach(el => {
+                el.classList.remove('border-purple-500', 'text-purple-300');
+                el.classList.add('border-transparent');
+            });
+
+            document.getElementById('tab-' + tabId).classList.remove('hidden');
+            const activeBtn = document.getElementById('btn-' + tabId);
+            activeBtn.classList.add('border-purple-500', 'text-purple-300');
+            activeBtn.classList.remove('border-transparent');
+        }
+
+        function handleImageFileSelect(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                stagedImageDataUrl = e.target.result;
+                const box = document.getElementById('imagePreviewBox');
+                box.innerHTML = `
+                    <img src="${stagedImageDataUrl}" class="h-20 w-auto rounded-lg object-cover border border-purple-500 shadow-md mb-1">
+                    <span class="text-xs text-purple-300 font-semibold">เลือกรูปเรียบร้อยแล้ว</span>
+                `;
+            };
+            reader.readAsDataURL(file);
+        }
+
+        function handleModFileSelect(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            stagedModFile = file;
+            const textElem = document.getElementById('modFileNameText');
+            if (textElem) {
+                textElem.innerText = `แนบไฟล์: ${file.name}`;
+                textElem.classList.remove('text-slate-300');
+                textElem.classList.add('text-cyan-300', 'font-bold');
+            }
+        }
+
+        function openUploadModal() {
+            document.getElementById('uploadModal').classList.remove('hidden');
+        }
+
+        function closeUploadModal() {
+            document.getElementById('uploadModal').classList.add('hidden');
+            document.getElementById('uploadForm').reset();
+            stagedImageDataUrl = null;
+            stagedModFile = null;
+
+            document.getElementById('imagePreviewBox').innerHTML = `
+                <i class="fa-solid fa-camera text-2xl text-purple-400 mb-1"></i>
+                <span class="text-slate-300 font-medium">กดเลือกรูปจากเครื่อง</span>
+                <span class="text-[10px] text-slate-500">.png, .jpg, .webp</span>
+            `;
+
+            document.getElementById('modFileNameText').innerText = 'กดเลือกไฟล์มอด (.mcaddon, .mcpack...)';
+            document.getElementById('modFileNameText').classList.remove('text-cyan-300', 'font-bold');
+            document.getElementById('modFileNameText').classList.add('text-slate-300');
+        }
+
+        async function handleUploadSubmit(e) {
+            e.preventDefault();
+
+            const title = document.getElementById('upTitle').value.trim();
+            const author = document.getElementById('upAuthor').value.trim();
+            const platform = document.getElementById('upPlatform').value;
+            const category = document.getElementById('upCategory').value;
+            const version = document.getElementById('upVersion').value.trim() || '1.20+';
+            const desc = document.getElementById('upDesc').value.trim();
+            const tagsVal = document.getElementById('upTags').value.trim();
+
+            const tags = tagsVal ? tagsVal.split(',').map(t => t.trim()) : [platform, category];
+            const image = stagedImageDataUrl || 'https://images.unsplash.com/photo-1579783902614-a3fb3927b675?w=800&q=80';
+
+            let fileExt = 'mcaddon';
+            let fileDataPayload = null;
+
+            // Read attached file as DataURL for true file download
+            if (stagedModFile) {
+                const nameParts = stagedModFile.name.split('.');
+                fileExt = nameParts.length > 1 ? nameParts.pop().toLowerCase() : 'mcaddon';
+
+                fileDataPayload = await new Promise((resolve) => {
+                    const reader = new FileReader();
+                    reader.onload = (evt) => resolve(evt.target.result);
+                    reader.readAsDataURL(stagedModFile);
+                });
+            }
+
+            const newMod = {
+                id: 'mod-' + Date.now(),
+                title: title,
+                author: author,
+                category: category,
+                platform: platform,
+                rating: 5.0,
+                downloads: 1,
+                likes: 1,
+                version: version,
+                tags: tags,
+                image: image,
+                fileType: fileExt,
+                uploadedFileData: fileDataPayload,
+                uploadedFileName: stagedModFile ? stagedModFile.name : null,
+                isLiked: false,
+                description: desc,
+                installGuide: platform === 'Mobile' ? 'เปิดไฟล์ด้วยแอป Minecraft บนสมาร์ทโฟน' : 'นำเข้าตัวเกมตามคู่มือชนิดไฟล์ .' + fileExt,
+                changelog: 'v1.0.0: เปิดตัวไฟล์มอดลงระบบ CraftHub Universe',
+                comments: []
+            };
+
+            modsList.unshift(newMod);
+            saveState();
+            closeUploadModal();
+            applyFilters();
+
+            showToast('🎉 อัปโหลดมอดของคุณสำเร็จ!', 'success');
+        }
+
+        async function downloadModFile(modId, event) {
+            if (event) event.stopPropagation();
+
+            const mod = modsList.find(m => m.id === modId);
+            if (!mod) return;
+
+            showToast(`กำลังเตรียมไฟล์ ${mod.title} สำหรับดาวน์โหลด...`, 'info');
+
+            mod.downloads++;
+            saveState();
+            applyFilters();
+
+            if (currentOpenModId === modId) {
+                const dlElem = document.getElementById('detailDownloadsCount');
+                if (dlElem) dlElem.innerText = formatCompactNum(mod.downloads) + ' ครั้ง';
+            }
+
+            try {
+                // If user uploaded a custom file, trigger direct DataURL download
+                if (mod.uploadedFileData) {
+                    const a = document.createElement('a');
+                    a.href = mod.uploadedFileData;
+                    a.download = mod.uploadedFileName || `${mod.title}.${mod.fileType}`;
+                    document.body.appendChild(a);
+                    a.click();
+                    document.body.removeChild(a);
+                    showToast(`ดาวน์โหลดไฟล์ ${mod.title} สำเร็จ!`, 'success');
+                    return;
+                }
+
+                // Dynamic Generation for Presets (I AM ATOMIC and defaults)
+                const zip = new JSZip();
+
+                const manifest = {
+                    "format_version": 2,
+                    "header": {
+                        "name": mod.title,
+                        "description": mod.description.substring(0, 80),
+                        "uuid": generateUUID(),
+                        "version": [1, 0, 0],
+                        "min_engine_version": [1, 20, 80]
+                    },
+                    "modules": [
+                        {
+                            "type": "script",
+                            "language": "javascript",
+                            "uuid": generateUUID(),
+                            "version": [1, 0, 0],
+                            "entry": "scripts/main.js"
+                        }
+                    ],
+                    "dependencies": [
+                        {
+                            "module_name": "@minecraft/server",
+                            "version": "1.10.0"
+                        }
+                    ]
+                };
+
+                let mainScript = `import { world } from "@minecraft/server";\nconsole.warn("${mod.title} Loaded Successfully!");`;
+
+                if (mod.id === 'mod-atomic' || mod.title.includes('ATOMIC')) {
+                    mainScript = `import { world, system } from "@minecraft/server";
+
+const TRIGGER_ITEM = "minecraft:diamond_sword";
+
+world.beforeEvents.itemUse.subscribe((event) => {
+    const player = event.source;
+    const item = event.itemStack;
+
+    if (item && item.typeId === TRIGGER_ITEM) {
+        system.run(() => {
+            castIAmAtomic(player);
+        });
+    }
+});
+
+function castIAmAtomic(player) {
+    const dimension = player.dimension;
+    const location = player.location;
+
+    world.sendMessage("§d§l[Shadow] §fI... AM...");
+    player.onScreenDisplay.setTitle("§d§lI AM ATOMIC", {
+        subtitle: "§5§l[ ALL RANGE ATOMIC ]",
+        fadeInDuration: 5,
+        stayDuration: 40,
+        fadeOutDuration: 10
+    });
+
+    for (let i = 0; i < 360; i += 15) {
+        const rad = (i * Math.PI) / 180;
+        const x = location.x + Math.cos(rad) * 3;
+        const z = location.y;
+        const y = location.z + Math.sin(rad) * 3;
+        dimension.spawnParticle("minecraft:dragon_destroy_block", { x: x, y: location.y + 1, z: y });
+    }
+
+    system.runTimeout(() => {
+        const radius = 25;
+        dimension.playSound("random.explode", location, { volume: 5.0, pitch: 0.5 });
+        dimension.playSound("ambient.weather.lightning.impact", location, { volume: 5.0, pitch: 1.0 });
+
+        for (let x = -radius; x <= radius; x += 3) {
+            for (let z = -radius; z <= radius; z += 3) {
+                if (x * x + z * z <= radius * radius) {
+                    const pos = { x: location.x + x, y: location.y + 0.5, z: location.z + z };
+                    dimension.spawnParticle("minecraft:end_rod", pos);
+                    dimension.spawnParticle("minecraft:huge_explosion_lab_clean_smoke", pos);
+                }
+            }
+        }
+
+        const targets = dimension.getEntities({ location: location, maxDistance: radius, excludeEntities: [player] });
+        for (const target of targets) {
+            target.applyDamage(200, { cause: "entityExplosion", damagingEntity: player });
+            const dirX = target.location.x - location.x;
+            const dirZ = target.location.z - location.z;
+            target.applyKnockback(dirX, dirZ, 3.0, 1.5);
+        }
+    }, 10);
+}`;
+                }
+
+                zip.file("manifest.json", JSON.stringify(manifest, null, 2));
+                zip.file("scripts/main.js", mainScript);
+                zip.file("pack_icon.png", "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==", {base64: true});
+
+                const blob = await zip.generateAsync({ type: "blob" });
+                const fileName = `${mod.title.replace(/[^a-zA-Z0-9_-]/g, '_')}.${mod.fileType}`;
+
+                const downloadUrl = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = downloadUrl;
+                a.download = fileName;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(downloadUrl);
+
+                showToast(`เริ่มดาวน์โหลดไฟล์ ${fileName} เรียบร้อยแล้ว!`, 'success');
+            } catch (err) {
+                console.error(err);
+                showToast('เกิดข้อผิดพลาดในการสร้างไฟล์ดาวน์โหลด', 'error');
+            }
+        }
+
+        // UTILITY FUNCTIONS
+        function selectPlatform(platId) {
+            activePlatform = platId;
+            renderPlatformTabs();
+            applyFilters();
+        }
+
+        function selectCategory(cat) {
+            activeCategory = cat;
+            renderCategoryTabs();
+            applyFilters();
+        }
+
+        function selectTag(tag) {
+            activeTag = tag;
+            renderTagChips();
+            applyFilters();
+        }
+
+        function toggleCardLike(modId, e) {
+            if (e) e.stopPropagation();
+            const mod = modsList.find(m => m.id === modId);
+            if (!mod) return;
+
+            mod.isLiked = !mod.isLiked;
+            mod.likes += mod.isLiked ? 1 : -1;
+            saveState();
+            applyFilters();
+            showToast(mod.isLiked ? 'เพิ่มลงในมอดที่ถูกใจแล้ว' : 'ยกเลิกการถูกใจแล้ว', 'info');
+        }
+
+        function toggleModalLike(modId) {
+            const mod = modsList.find(m => m.id === modId);
+            if (!mod) return;
+
+            mod.isLiked = !mod.isLiked;
+            mod.likes += mod.isLiked ? 1 : -1;
+            saveState();
+
+            document.getElementById('detailLikesCount').innerText = mod.likes;
+            const btn = document.getElementById('modalLikeBtn');
+            btn.querySelector('i').classList.toggle('text-rose-500', mod.isLiked);
+            applyFilters();
+        }
+
+        function submitComment(modId) {
+            const input = document.getElementById('modalCommentInput');
+            const text = input ? input.value.trim() : '';
+            if (!text) return;
+
+            const mod = modsList.find(m => m.id === modId);
+            if (!mod) return;
+
+            if (!mod.comments) mod.comments = [];
+            mod.comments.unshift({
+                user: 'User_' + Math.floor(1000 + Math.random() * 9000),
+                text: text,
+                date: 'เมื่อสักครู่นี้'
+            });
+
+            saveState();
+            openModDetails(modId);
+            showToast('ขอบคุณสำหรับความคิดเห็น!', 'success');
+        }
+
+        function handleSearchInput() {
+            searchQuery = document.getElementById('searchInput').value;
+            const clearBtn = document.getElementById('clearSearchBtn');
+            if (searchQuery) clearBtn.classList.remove('hidden');
+            else clearBtn.classList.add('hidden');
+            applyFilters();
+        }
+
+        function syncSearchMobile() {
+            searchQuery = document.getElementById('mobileSearchInput').value;
+            document.getElementById('searchInput').value = searchQuery;
+            applyFilters();
+        }
+
+        function clearSearch() {
+            searchQuery = '';
+            document.getElementById('searchInput').value = '';
+            document.getElementById('mobileSearchInput').value = '';
+            document.getElementById('clearSearchBtn').classList.add('hidden');
+            applyFilters();
+        }
+
+        function resetAllFilters() {
+            activePlatform = 'All';
+            activeCategory = 'All';
+            activeTag = 'All';
+            searchQuery = '';
+            document.getElementById('searchInput').value = '';
+            document.getElementById('mobileSearchInput').value = '';
+            renderPlatformTabs();
+            renderCategoryTabs();
+            renderTagChips();
+            applyFilters();
+        }
+
+        function saveState() {
+            localStorage.setItem('crafthub_mods_v4', JSON.stringify(modsList));
+        }
+
+        function formatCompactNum(num) {
+            if (num >= 1000) return (num / 1000).toFixed(1) + 'k';
+            return num;
+        }
+
+        function generateUUID() {
+            return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+                const r = Math.random() * 16 | 0, v = c === 'x' ? r : (r & 0x3 | 0x8);
+                return v.toString(16);
+            });
+        }
+
+        function showToast(msg, type = 'info') {
+            const container = document.getElementById('toastContainer');
+            const toast = document.createElement('div');
+            
+            let bg = 'bg-slate-900 border-purple-500/50 text-purple-200';
+            if (type === 'success') bg = 'bg-slate-900 border-emerald-500/50 text-emerald-200';
+            if (type === 'error') bg = 'bg-slate-900 border-rose-500/50 text-rose-200';
+
+            toast.className = `toast-animation p-3.5 rounded-2xl border ${bg} text-xs shadow-2xl flex items-center gap-2 max-w-xs backdrop-blur-md pointer-events-auto`;
+            toast.innerHTML = `
+                <i class="fa-solid ${type === 'success' ? 'fa-circle-check text-emerald-400' : 'fa-circle-info text-purple-400'} text-base"></i>
+                <span>${msg}</span>
+            `;
+
+            container.appendChild(toast);
+            setTimeout(() => {
+                toast.classList.add('opacity-0', 'transition', 'duration-300');
+                setTimeout(() => toast.remove(), 300);
+            }, 3000);
+        }
+
+        window.addEventListener('DOMContentLoaded', initApp);
+    </script>
+</body>
+</html>
+```
